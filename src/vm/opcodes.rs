@@ -45,12 +45,6 @@ impl OpCode {
     };
 }
 
-operation!(
-    MOVE => (SET_A_FLAG, R, N, ABC),
-    LOADK => (SET_A_FLAG, K, N, ABx),
-    TESTTEST => (SET_A_FLAG | TEST_FLAG, R, U, ABC)
-);
-
 #[derive(Debug)]
 pub struct Operation {
     flag: u8,
@@ -71,3 +65,9 @@ impl Operation {
         }
     }
 }
+
+operation!(
+    MOVE => (SET_A_FLAG, R, N, ABC),
+    LOADK => (SET_A_FLAG, K, N, ABx),
+    TESTTEST => (SET_A_FLAG | TEST_FLAG, R, U, ABC)
+);
