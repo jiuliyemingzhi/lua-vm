@@ -1,3 +1,5 @@
+use bitflags::bitflags;
+
 #[derive(Debug)]
 pub enum OpI {
     ABC,
@@ -14,23 +16,32 @@ pub enum OpArg {
     K,
 }
 
+bitflags! {
+    #[derive(Debug)]
+    pub struct Flags: u8 {
+        const NONE = 0;
+        const TEST = 1;
+        const SET_A = 1 << 1;
+        const SET_A_TEST = Self::TEST.bits() | Self::SET_A.bits();
+    }
+}
+
 macro_rules! operation {
-    ($($code:ident => ($flag:expr, $arg_a:ident, $arg_b:ident, $i:ident)),*) => {
+    ($($code:ident => ($flag:ident, $arg_a:ident, $arg_b:ident, $i:ident)),*) => {
 #[derive(Debug)]
+#[repr(u8)]
 pub enum OpCode {
     $(
     $code,
     )*
 }
 mod code {
-    use crate::vm::opcodes::{OpArg, OpCode, Operation, OpI};
-
-    pub const TEST_FLAG: u8 = 1;
-    pub const SET_A_FLAG: u8 = 1 << 1;
+    use crate::vm::opcodes::{OpArg, OpCode, Operation, OpI, Flags};
 
     $(
-    pub const $code: Operation = Operation::new($flag, OpArg::$arg_a, OpArg::$arg_b, OpI::$i, OpCode::$code);
+    pub const $code: Operation = Operation::new(Flags::$flag, OpArg::$arg_a, OpArg::$arg_b, OpI::$i, OpCode::$code);
     )*
+
 }
 
 impl OpCode {
@@ -47,7 +58,7 @@ impl OpCode {
 
 #[derive(Debug)]
 pub struct Operation {
-    flag: u8,
+    flag: Flags,
     arg_a_mode: OpArg,
     arg_b_mode: OpArg,
     i: OpI,
@@ -55,7 +66,7 @@ pub struct Operation {
 }
 
 impl Operation {
-    pub const fn new(flag: u8, arg_a_mode: OpArg, arg_b_mode: OpArg, i: OpI, code: OpCode) -> Self {
+    pub const fn new(flag: Flags, arg_a_mode: OpArg, arg_b_mode: OpArg, i: OpI, code: OpCode) -> Self {
         Self {
             flag,
             arg_a_mode,
@@ -67,7 +78,8 @@ impl Operation {
 }
 
 operation!(
-    MOVE => (SET_A_FLAG, R, N, ABC),
-    LOADK => (SET_A_FLAG, K, N, ABx),
-    TESTTEST => (SET_A_FLAG | TEST_FLAG, R, U, ABC)
+    MOVE => (SET_A, R, N, ABC),
+    LOADK => (SET_A, K, N, ABx),
+    TESTTEST => (SET_A_TEST, R, U, ABC),
+    UNKOWN => (NONE, R, U, Ax)
 );
