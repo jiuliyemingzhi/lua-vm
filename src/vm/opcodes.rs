@@ -27,32 +27,32 @@ bitflags! {
 }
 
 macro_rules! operation {
-    ($($code:ident => ($flag:ident, $arg_a:ident, $arg_b:ident, $i:ident)),*) => {
-#[derive(Debug)]
-#[repr(u8)]
-pub enum OpCode {
-    $(
-    $code,
-    )*
-}
-mod code {
-    use crate::vm::opcodes::{OpArg, OpCode, Operation, OpI, Flags};
-
-    $(
-    pub const $code: Operation = Operation::new(Flags::$flag, OpArg::$arg_a, OpArg::$arg_b, OpI::$i, OpCode::$code);
-    )*
-
-}
-
-impl OpCode {
-    pub fn get_option(self) -> &'static Operation {
-        match self {
+    ($count:expr, $($name:ident => ($flag:ident, $arg_a:ident, $arg_b:ident, $i:ident)),*) => {
+        #[derive(Debug)]
+        #[repr(u32)]
+        pub enum OpCode {
             $(
-            OpCode::$code => &code::$code,
+            $name,
             )*
         }
-    }
-}
+        pub mod code {
+            use crate::vm::opcodes::{OpArg, OpCode, Operation, OpI, Flags};
+
+            $(
+            pub const $name: Operation = Operation::new(Flags::$flag, OpArg::$arg_a, OpArg::$arg_b, OpI::$i, OpCode::$name);
+            )*
+            pub static OPERATION_ALL: [&Operation; $count] = [$(&$name,)*];
+        }
+
+        impl OpCode {
+            pub fn get_option(self) -> &'static Operation {
+                match self {
+                    $(
+                    OpCode::$name => &code::$name,
+                    )*
+                }
+            }
+        }
     };
 }
 
@@ -75,11 +75,21 @@ impl Operation {
             code,
         }
     }
+
+    pub fn is_test(&self) -> bool { Flags::TEST. }
+}
+
+impl From<OpCode> for u32 {
+    fn from(value: OpCode) -> Self {
+        value as u32
+    }
 }
 
 operation!(
+    3,
     MOVE => (SET_A, R, N, ABC),
     LOADK => (SET_A, K, N, ABx),
-    TESTTEST => (SET_A_TEST, R, U, ABC),
-    UNKOWN => (NONE, R, U, Ax)
+    TESTTEST => (SET_A_TEST, R, U, ABC)
 );
+
+
