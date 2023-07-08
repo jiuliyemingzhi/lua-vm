@@ -35,6 +35,7 @@ macro_rules! operation {
             $name,
             )*
         }
+
         pub mod code {
             use crate::vm::opcodes::{OpArg, OpCode, Operation, OpI, Flags};
 
@@ -76,13 +77,13 @@ impl Operation {
         }
     }
 
-    pub fn is_test(&self) -> bool { Flags::TEST. }
+    pub fn is_test(&self) -> bool { self.flag.contains(Flags::TEST) }
+
+    pub fn is_set_a(&self) -> bool { self.flag.contains(Flags::SET_A) }
 }
 
 impl From<OpCode> for u32 {
-    fn from(value: OpCode) -> Self {
-        value as u32
-    }
+    fn from(value: OpCode) -> Self { value as u32 }
 }
 
 operation!(
