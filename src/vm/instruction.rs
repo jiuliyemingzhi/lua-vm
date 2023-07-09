@@ -12,50 +12,49 @@ impl From<u32> for &'static Operation {
     fn from(value: u32) -> Self { OPERATION_ALL[(value & OPERATION_MAX) as usize] }
 }
 
-macro_rules! u32opi {
-    ($($name:ident => $($field:ident:$func:ident),*);*) => {
-        $(
-            pub struct $name{
-                pub operation: &'static Operation,
-                $(pub $field: usize,)*
-            }
-
-            impl $name {
-                pub fn new(v: u32) -> Self { Self{ operation: v.into(), $($field: $func(v),)* } }
-
-                pub fn reset(&mut self, v: u32) {
-                    self.operation = v.into();
-                    $(self.$field = $func(v);)*
-                }
-            }
-        )*
-    };
-}
-
-u32opi!(
-    ABC => a:u32a, b:u32b, c:u32c;
-    ABx => a:u32a, bx:u32bx;
-    Ax  => ax:u32ax
-);
-
-impl ABx {
-    pub fn get_sbx(&self) -> isize { self.bx as isize - SBX_MAX }
+pub struct Instruction {
+    operation: &'static Operation,
+    v: u32,
 }
 
 macro_rules! u32_to_usize {
     ($($name:ident => $body:expr),*) => {
         $(
            #[inline]
-           pub fn $name(v: u32) -> usize { (v >> $body) as usize }
+           pub fn $name(&self) -> usize { (self.v >> $body) as usize }
         )*
     };
 }
 
-u32_to_usize!(
-    u32a => OPERATION_LEN & A_MAX,
-    u32b => (OPERATION_LEN + A_LEN) & B_C_MAX,
-    u32c => (OPERATION_LEN + A_LEN + B_C_LEN) & B_C_MAX,
-    u32ax => OPERATION_LEN,
-    u32bx => OPERATION_LEN + A_LEN
-);
+impl Instruction {
+    #[inline]
+    fn new(v: u32) -> Self {
+        Self {
+            v,
+            operation: v.into(),
+        }
+    }
+
+    #[inline]
+    fn reset(&mut self, v: u32) {
+        self.v = v;
+        self.operation = v.into();
+    }
+
+    #[inline]
+    pub fn get_sbx(&self) -> isize { self.get_bx() as isize - SBX_MAX }
+
+    u32_to_usize!(
+        get_a => OPERATION_LEN & A_MAX,
+        get_b => (OPERATION_LEN + A_LEN) & B_C_MAX,
+        get_c => (OPERATION_LEN + A_LEN + B_C_LEN) & B_C_MAX,
+        get_ax => OPERATION_LEN,
+        get_bx => OPERATION_LEN + A_LEN
+    );
+}
+
+
+
+
+
 
