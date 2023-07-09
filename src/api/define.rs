@@ -20,12 +20,17 @@ impl LuaType {
 
     pub fn set_nil(&mut self) { *self = Self::Nil; }
 
-    pub fn is_nil(&self) -> bool { self == Self::Nil }
+    pub fn is_nil(&self) -> bool {
+        match self {
+            LuaType::Nil => true,
+            _ => false
+        }
+    }
 
     pub fn to_bool(&self) -> bool {
         match self {
             LuaType::Nil => false,
-            LuaType::Boolean(b) => b,
+            LuaType::Boolean(b) => *b,
             _ => true,
         }
     }
@@ -52,11 +57,19 @@ impl LuaType {
         }
     }
 
-    pub fn to_string_x(&self) -> Option<String> {
+    pub fn string_or_set_x(&mut self) -> Option<String> {
         match self {
-            LuaType::Number(v) => Some(v.to_string()),
+            LuaType::Number(v) => {
+                let new_str = v.to_string();
+                *self = LuaType::String(Rc::new(v.to_string()));
+                Some(new_str)
+            }
             _ => None,
         }
+    }
+
+    pub fn string_or_set(&mut self) -> String {
+        self.string_or_set_x().unwrap_or("".to_string())
     }
 }
 
@@ -71,22 +84,22 @@ pub enum TNumber {
 impl TNumber {
     pub fn to_string(&self) -> String {
         match self {
-            TNumber::Float(v) => { v.to_string() }
-            TNumber::Int(v) => { v.to_string() }
+            TNumber::Float(v) => v.to_string(),
+            TNumber::Int(v) => v.to_string()
         }
     }
 
     pub fn to_number(&self) -> f64 {
-        match self {
-            TNumber::Float(&n) => n,
-            LTNumber::Int(&n) => n as f64,
+        match *self {
+            TNumber::Float(n) => n,
+            TNumber::Int(n) => n as f64,
         }
     }
 
     pub fn to_integer(&self) -> i64 {
-        match self {
-            TNumber::Int(&n) => n,
-            LTNumber::Float(&n) => n as i64,
+        match *self {
+            TNumber::Int(n) => n,
+            TNumber::Float(n) => n as i64,
         }
     }
 }

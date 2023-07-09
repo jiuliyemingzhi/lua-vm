@@ -1,4 +1,4 @@
-use crate::api::define::LuaType;
+use crate::api::define::{LuaType, OptionLuaType};
 
 pub trait State {
     fn get_top(&self) -> usize;
@@ -11,5 +11,5 @@ pub trait State {
     fn rotate(&mut self, idx: usize, n: usize);
     fn set_top(&mut self, idx: usize);
     fn push(&mut self, v: LuaType);
-    fn get(&self, idx: usize) -> &LuaType;
+    fn get(&self, idx: usize) -> &OptionLuaType;
 }
