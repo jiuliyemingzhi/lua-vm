@@ -1,12 +1,12 @@
-use std::io::Sink;
 use std::ops::Index;
-use crate::api::define::{LuaType, OptionLuaType};
+use crate::api::define::LuaType;
 use crate::stack_overflow;
 use crate::utils::lang::STACK_OVERFLOW;
 
 
+#[derive(Debug)]
 pub(crate) struct LuaStack {
-    slots: Vec<OptionLuaType>,
+    slots: Vec<LuaType>,
 }
 
 
@@ -25,11 +25,11 @@ impl LuaStack {
         }
     }
 
-    pub fn push(&mut self, val: OptionLuaType) {
+    pub fn push(&mut self, val: LuaType) {
         self.slots.push(val);
     }
 
-    pub fn pop(&mut self) -> OptionLuaType {
+    pub fn pop(&mut self) -> LuaType {
         self.slots.pop().expect(STACK_OVERFLOW)
     }
 
@@ -42,13 +42,13 @@ impl LuaStack {
         idx > self.get_top()
     }
 
-    pub fn set(&mut self, idx: usize, val: OptionLuaType) {
+    pub fn set(&mut self, idx: usize, val: LuaType) {
         if self.not_valid(idx) { stack_overflow!(); }
         self.slots[idx] = val;
     }
 
     #[inline]
-    pub fn get(&self, idx: usize) -> OptionLuaType {
+    pub fn get(&self, idx: usize) -> LuaType {
         self.slots[idx].clone()
     }
 
@@ -64,13 +64,13 @@ impl LuaStack {
         self.slots.remove(idx);
     }
 
-    pub fn index(&self, idx: usize) -> &OptionLuaType {
+    pub fn index(&self, idx: usize) -> &LuaType {
         self.slots.index(idx)
     }
 
     pub fn set_top(&mut self, idx: usize) {
         if self.get_top() != idx {
-            self.slots.resize_with(idx, || None);
+            self.slots.resize_with(idx, || LuaType::Nil);
         }
     }
 }

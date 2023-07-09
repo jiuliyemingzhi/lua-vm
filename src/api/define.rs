@@ -1,9 +1,6 @@
 use std::rc::Rc;
 
-pub type OptionLuaType = Option<LuaType>;
-
-
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum LuaType {
     Nil,
     Boolean(bool),
@@ -73,9 +70,10 @@ impl LuaType {
     }
 }
 
+#[derive(Debug)]
 pub struct TLightUserData {}
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum TNumber {
     Float(f64),
     Int(i64),
@@ -104,8 +102,11 @@ impl TNumber {
     }
 }
 
+#[derive(Debug)]
 pub struct TTable {}
 
+#[derive(Debug)]
 pub struct TUserData {}
 
+#[derive(Debug)]
 pub struct TThread {}

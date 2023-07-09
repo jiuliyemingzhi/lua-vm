@@ -1,8 +1,9 @@
-use crate::api::define::{LuaType, OptionLuaType};
+use crate::api::define::LuaType;
 use crate::api::state::State;
 use crate::state::stack::LuaStack;
 use crate::vm::opcodes::Operation;
 
+#[derive(Debug)]
 struct LuaState {
     stack: LuaStack,
 }
@@ -32,6 +33,8 @@ impl State for LuaState {
         self.stack.push(self.stack.get(idx));
     }
 
+    fn get_right_idx(&self, idx: usize) -> usize { self.get_top() - idx }
+
     fn replace(&mut self, idx: usize) {
         let pop = self.stack.pop();
         self.stack.set(idx, pop);
@@ -54,11 +57,38 @@ impl State for LuaState {
     }
 
     fn push(&mut self, v: LuaType) {
-        self.stack.push(Some(v));
+        self.stack.push(v);
     }
 
-    fn get(&self, idx: usize) -> &OptionLuaType {
+    fn get(&self, idx: usize) -> &LuaType {
         self.stack.index(idx)
     }
 }
 
+#[cfg(test)]
+mod test {
+    use std::rc::Rc;
+    use crate::api::define::{LuaType, TNumber};
+    use crate::api::state::State;
+    use crate::state::state::LuaState;
+
+    #[test]
+    fn test_all_state() {
+        let mut state = LuaState::new();
+        state.push(LuaType::Boolean(true));
+        state.push(LuaType::Number(TNumber::Int(10)));
+        state.push(LuaType::Nil);
+        state.push(LuaType::String(Rc::new("hello".to_string())));
+        println!("{:?}", state);
+        state.push_value(state.get_right_idx(4));
+        println!("{:?}", state);
+        state.replace(2);
+        println!("{:?}", state);
+        state.set_top(6);
+        println!("{:?}", state);
+        state.remove(state.get_right_idx(3));
+        println!("{:?}", state);
+        state.set_top(state.get_right_idx(4));
+        println!("{:?}", state);
+    }
+}
