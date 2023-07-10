@@ -1,4 +1,6 @@
+use std::ops::Deref;
 use std::rc::Rc;
+use crate::number::math::TNumber;
 
 #[derive(Clone, Debug)]
 pub enum LuaType {
@@ -32,75 +34,47 @@ impl LuaType {
         }
     }
 
-    pub fn to_number(&self) -> f64 {
-        self.to_number_x().unwrap_or(0f64)
+    pub fn to_number(&self) -> TNumber {
+        self.to_number_x().unwrap_or(TNumber::default_float())
     }
 
-    pub fn to_number_x(&self) -> Option<f64> {
+    pub fn to_number_x(&self) -> Option<TNumber> {
         match self {
-            LuaType::Number(v) => Some(v.to_number()),
+            LuaType::Number(v) => Some(v.clone().to_float()),
             _ => None,
         }
     }
 
-    pub fn to_integer(&self) -> i64 {
-        self.to_integer_x().unwrap_or(0)
+    pub fn to_integer(&self) -> TNumber {
+        self.to_integer_x().unwrap_or(TNumber::default())
     }
 
-    pub fn to_integer_x(&self) -> Option<i64> {
+    pub fn to_integer_x(&self) -> Option<TNumber> {
         match self {
-            LuaType::Number(v) => Some(v.to_integer()),
+            LuaType::Number(v) => Some(v.clone().to_integer()),
             _ => None,
         }
     }
 
-    pub fn string_or_set_x(&mut self) -> Option<String> {
+    pub fn string_or_set_x(&mut self) -> Option<Rc<String>> {
         match self {
             LuaType::Number(v) => {
-                let new_str = v.to_string();
-                *self = LuaType::String(Rc::new(v.to_string()));
+                let new_str = Rc::new(v.to_string());
+                *self = LuaType::String(new_str.clone());
                 Some(new_str)
             }
             _ => None,
         }
     }
 
-    pub fn string_or_set(&mut self) -> String {
-        self.string_or_set_x().unwrap_or("".to_string())
+    pub fn string_or_set(&mut self) -> Rc<String> {
+        self.string_or_set_x().unwrap_or(Rc::new("".to_string()))
     }
 }
 
 #[derive(Debug)]
 pub struct TLightUserData {}
 
-#[derive(Clone, Debug)]
-pub enum TNumber {
-    Float(f64),
-    Int(i64),
-}
-
-impl TNumber {
-    pub fn to_string(&self) -> String {
-        match self {
-            TNumber::Float(v) => v.to_string(),
-            TNumber::Int(v) => v.to_string()
-        }
-    }
-
-    pub fn to_number(&self) -> f64 {
-        match *self {
-            TNumber::Float(n) => n,
-            TNumber::Int(n) => n as f64,
-        }
-    }
-
-    pub fn to_integer(&self) -> i64 {
-        match *self {
-            TNumber::Int(n) => n,
-            TNumber::Float(n) => n as i64,
-        }
-    }
-}
 
 #[derive(Debug)]
 pub struct TTable {}
