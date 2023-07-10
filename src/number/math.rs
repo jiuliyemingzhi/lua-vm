@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::fmt::{Display, Formatter};
 use std::ops::Add;
 
@@ -54,7 +55,6 @@ impl TNumber {
             _ => self.to_float(),
         }
     }
-
 }
 
 macro_rules! operator_overloading {
@@ -128,6 +128,30 @@ impl std::ops::Not for TNumber {
     }
 }
 
+
+impl Eq for TNumber{
+
+}
+
+impl PartialEq<Self> for TNumber {
+    fn eq(&self, other: &Self) -> bool {
+        todo!()
+    }
+}
+
+
+
+impl PartialOrd<Self> for TNumber {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        todo!()
+    }
+}
+
+impl Ord for TNumber{
+    fn cmp(&self, other: &Self) -> Ordering {
+        todo!()
+    }
+}
 // impl std::ops::Add for TNumber {
 //     type Output = TNumber;
 //
