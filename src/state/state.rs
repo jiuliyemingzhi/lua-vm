@@ -1,10 +1,8 @@
 use crate::api::define::LuaType;
-use crate::api::state::State;
 use crate::state::stack::LuaStack;
-use crate::vm::opcodes::Operation;
 
 #[derive(Debug)]
-struct LuaState {
+pub struct LuaState {
     stack: LuaStack,
 }
 
@@ -14,9 +12,7 @@ impl LuaState {
             stack: LuaStack::new(1024)
         }
     }
-}
 
-impl State for LuaState {
     fn get_top(&self) -> usize {
         self.stack.get_top()
     }
