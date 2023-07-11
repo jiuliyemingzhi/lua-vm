@@ -1,20 +1,28 @@
-use std::mem::size_of_val;
-use std::ops::{Shl};
-use std::rc::Rc;
-use lua_vm::api::define::LuaType;
+use std::time::Instant;
 use lua_vm::number::math::TNumber;
-use lua_vm::vm::opcodes::OpCode;
 
 fn main() {
-    println!("{:?}", OpCode::MOVE.get_option());
-    println!("{:?}", OpCode::TESTTEST.get_option());
-    println!("{}", size_of_val(&LuaType::String(Rc::new("xxxxxx".to_string()))));
-    println!("{:?}", (TNumber::Int(3) / TNumber::Float(1.1f64)).floor_float());
-    println!("{:?}", TNumber::Int(3) / TNumber::Float(f64::INFINITY));
-    println!("{:?}", TNumber::Float(3.1) % TNumber::Float(1.0));
-    println!("{:?}", TNumber::Int(1) << TNumber::Int(1));
-    println!("{:?}", TNumber::Int(1) ^ TNumber::Int(0));
-    println!("{:?}", TNumber::Int(1) | TNumber::Int(1));
-    println!("{:?}",  !TNumber::Int(1).shl(10.into()));
-    println!("{:?}", TNumber::Float(3.1) << TNumber::Float(1.0));
+    let mut a = 1000.0;
+    let mut aa = TNumber::Float(a);
+    let mut instant = Instant::now();
+    for _ in 0..1000_0000 {
+        a = a - -1.0;
+        if a < 1000.0 {
+            a = 0.0;
+        }
+    }
+    println!("{:?} {} ", instant.elapsed(), a);
+    instant = Instant::now();
+    for _ in 0..1000_0000 {
+        aa = aa - -TNumber::Int(1);
+        if aa < TNumber::Float(1000.0) {
+            aa = TNumber::Float(0.0)
+        }
+        // !TNumber::Int(1).shl(10.into());
+        // TNumber::Float(3.1) > TNumber::Float(1.0);
+        // TNumber::Float(3.1) == TNumber::Float(1.0);
+        // TNumber::Int(1) == TNumber::Float(1.0);
+        // TNumber::Int(1) > -TNumber::Float(-f64::INFINITY);
+    }
+    println!("{:?} {}", instant.elapsed(), aa);
 }

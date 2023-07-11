@@ -1,8 +1,8 @@
-use std::cmp::Ordering;
 use std::fmt::{Display, Formatter};
-use std::ops::Add;
+use std::str::FromStr;
+use crate::api::define::VmError;
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum TNumber {
     Float(f64),
     Int(i64),
@@ -96,10 +96,10 @@ operator_overloading!(
     Div => div; |v, r| v / r; |v:i64, r:i64| v as f64 / r as f64,
     Rem => rem; |v, r| v % r; |v:i64, r:i64| v.wrapping_rem(r),
     Shl => shl; |_, _| bit_not_float!(); |v:i64, r:i64| {
-        if r < 0 { v.overflowing_shr(-r as u32).0 } else { v.overflowing_shl(r as u32).0 }
+        if r >= 0 { v.overflowing_shl(r as u32).0 } else { v.overflowing_shr(-r as u32).0 }
     },
     Shr => shr; |_, _| bit_not_float!(); |v:i64, r:i64| {
-          if r < 0 { v.overflowing_shl(-r as u32).0 } else { v.overflowing_shr(r as u32).0 }
+        if r >= 0 { v.overflowing_shr(r as u32).0 } else { v.overflowing_shl(-r as u32).0 }
     },
     BitOr => bitor; |_, _| bit_not_float!(); |v:i64, r:i64| v.bitor(r),
     BitAnd => bitand; |_, _| bit_not_float!(); |v:i64, r:i64| v.bitand(r),
@@ -128,47 +128,50 @@ impl std::ops::Not for TNumber {
     }
 }
 
-
-impl Eq for TNumber{
-
+macro_rules! eq_overwrite {
+    ($($eq:path => $func:ident, $res:ty),*) => {
+        impl Eq for TNumber {}
+        $(
+            impl $eq for TNumber {
+                fn $func(&self, rhs: &Self) -> $res {
+                    match *self {
+                        TNumber::Float(v) => {
+                            match *rhs {
+                                TNumber::Float(r) => v.$func(&r),
+                                TNumber::Int(r) => v.$func(&(r as f64)),
+                            }
+                        }
+                        TNumber::Int(v) => {
+                            match *rhs {
+                                TNumber::Float(r) => (v as f64).$func(&r),
+                                TNumber::Int(r) => v.$func(&r),
+                            }
+                        }
+                    }
+                }
+            }
+        )*
+    };
 }
 
-impl PartialEq<Self> for TNumber {
-    fn eq(&self, other: &Self) -> bool {
-        todo!()
+eq_overwrite!(
+    PartialEq<Self> => eq, bool,
+    PartialOrd<Self> => partial_cmp, Option<std::cmp::Ordering>
+);
+
+impl FromStr for TNumber {
+    type Err = VmError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if let Ok(v) = s.parse() {
+            Ok(TNumber::Int(v))
+        } else if let Ok(v) = s.parse() {
+            Ok(TNumber::Float(v))
+        } else {
+            Err(VmError::StringConvertNumber)
+        }
     }
 }
 
 
 
-impl PartialOrd<Self> for TNumber {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        todo!()
-    }
-}
-
-impl Ord for TNumber{
-    fn cmp(&self, other: &Self) -> Ordering {
-        todo!()
-    }
-}
-// impl std::ops::Add for TNumber {
-//     type Output = TNumber;
-//
-//     fn add(self, rhs: Self) -> Self::Output {
-//         match self {
-//             TNumber::Float(v) => {
-//                 match rhs {
-//                     TNumber::Float(r) => { TNumber::Float(v + r) }
-//                     TNumber::Int(r) => { TNumber::Float(v + r as f64) }
-//                 }
-//             }
-//             TNumber::Int(v) => {
-//                 match rhs {
-//                     TNumber::Float(r) => { TNumber::Float(v as f64 + r) }
-//                     TNumber::Int(r) => { TNumber::Int(v.wrapping_add(r)) }
-//                 }
-//             }
-//         }
-//     }
-// }
