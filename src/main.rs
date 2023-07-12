@@ -9,10 +9,11 @@ fn main() {
         a = a + 1.1;
     }
     println!("{:?} {} ", instant.elapsed(), a);
+    let ac = TNumber::Float(1.1);
     instant = Instant::now();
     for _ in 0..10000_0000 {
-        aa = aa.add(TNumber::Float(1.1));
+        aa = aa.add(ac);
     }
     let e = instant.elapsed();
-    println!("{:?} {} {}", e , aa, aa.shr(1.into()));
+    println!("{:?} {} {}", e , aa, aa.to_integer().shr((-10).into()));
 }

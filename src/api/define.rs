@@ -78,7 +78,7 @@ impl LuaType {
         match self {
             LuaType::Number(v) => Ok(*v),
             LuaType::String(v) => Ok(v.as_str().into()),
-            _ => Err(VmError::TypeChange(format!("{}转换类型失败!", self.get_typ_name()))),
+            _ => Err(VmError::TypeChange(format!("{}-> number 转换类型失败!", self.get_typ_name()))),
         }
     }
 
@@ -89,7 +89,7 @@ impl LuaType {
                 *self = LuaType::String(new_str.clone());
                 Ok(new_str)
             }
-            _ => Err(VmError::TypeChange(format!("{}转换类型失败!", self.get_typ_name()))),
+            _ => Err(VmError::TypeChange(format!("{} -> string 转换类型失败!", self.get_typ_name()))),
         }
     }
 
