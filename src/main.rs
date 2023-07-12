@@ -13,5 +13,6 @@ fn main() {
     for _ in 0..10000_0000 {
         aa = aa.add(TNumber::Float(1.1));
     }
-    println!("{:?} {}", instant.elapsed(), aa);
+    let e = instant.elapsed();
+    println!("{:?} {} {}", e , aa, aa.shr(1.into()));
 }

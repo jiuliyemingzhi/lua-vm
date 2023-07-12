@@ -1,5 +1,5 @@
 use std::fmt::{Display, Formatter};
-use std::ops::{BitAnd, BitXor, BitOr};
+use std::ops::{BitAnd, BitXor, BitOr, Add, Rem, Sub, Div, Mul};
 
 #[derive(Debug, Copy, Clone)]
 pub enum NaN {
@@ -86,18 +86,17 @@ impl TNumber {
     }
 
     operator_overload!(
-        add => |v, r| v + r; i64::wrapping_add,
-        sub => |v, r| v - r; i64::wrapping_sub,
-        mul => |v, r| v * r; i64::wrapping_mul,
-        div => |v, r| v / r; |v, r| v as f64 / r as f64,
-        rem => |v, r| v % r; i64::wrapping_rem,
+        add => f64::add; i64::wrapping_add,
+        sub => f64::sub; i64::wrapping_sub,
+        mul => f64::mul; i64::wrapping_mul,
+        div => f64::div; |v, r| v as f64 / r as f64,
+        rem => f64::rem; i64::wrapping_rem,
         shl => |_, _| NaN::FloatBit; |v: i64, r: i64|  v.wrapping_shl(if r >= 0 { r as u32 } else { -r as u32 } ),
         shr => |_, _| NaN::FloatBit;  |v: i64, r: i64| v.wrapping_shr(if r >= 0 { r as u32 } else { -r as u32 } ),
         bitor => |_, _| NaN::FloatBit; i64::bitor,
         bitand => |_, _| NaN::FloatBit; i64::bitand,
         bitxor => |_, _| NaN::FloatBit; i64::bitxor
     );
-
 
 
     pub fn neg(self) -> Self {
