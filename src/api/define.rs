@@ -1,12 +1,6 @@
 use std::rc::Rc;
+use crate::err::err::{VmError, VmResult};
 use crate::number::math::TNumber;
-
-pub enum VmError {
-    TypeChange(String),
-    StringConvertNumber,
-}
-
-type VmResult<T> = Result<T, VmError>;
 
 #[derive(Clone, Debug)]
 pub enum LuaType {
@@ -83,8 +77,8 @@ impl LuaType {
     pub fn to_number_x(&self) -> VmResult<TNumber> {
         match self {
             LuaType::Number(v) => Ok(*v),
-            LuaType::String(v) => Ok(v.parse()?),
-            _ => Err(VmError::TypeChange(format!("{} 无法转换为Number", self.get_typ_name()))),
+            LuaType::String(v) => Ok(v.as_str().into()),
+            _ => Err(VmError::TypeChange(format!("{}转换类型失败!", self.get_typ_name()))),
         }
     }
 

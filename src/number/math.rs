@@ -1,11 +1,18 @@
 use std::fmt::{Display, Formatter};
-use std::str::FromStr;
-use crate::api::define::VmError;
+use std::ops::{BitAnd, BitXor, BitOr};
+
+#[derive(Debug, Copy, Clone)]
+pub enum NaN {
+    StringConvertNumber,
+    FloatBit,
+}
+
 
 #[derive(Debug, Copy, Clone)]
 pub enum TNumber {
-    Float(f64),
     Int(i64),
+    Float(f64),
+    NaN(NaN),
 }
 
 impl From<i64> for TNumber {
@@ -25,8 +32,31 @@ impl Display for TNumber {
         match self {
             TNumber::Float(v) => write!(f, "{}", v),
             TNumber::Int(v) => write!(f, "{}", v),
+            _ => write!(f, "NaN"),
         }
     }
+}
+
+macro_rules! operator_overload {
+    ($($operator_name:ident => $ff:expr; $ii:expr),*) => {
+        $(
+            pub fn $operator_name(self, rhs: Self) -> Self {
+                match self {
+                    TNumber::Float(v) => match rhs {
+                        TNumber::Float(r) => $ff(v, r).into(),
+                        TNumber::Int(r) => $ff(v, r as f64).into(),
+                        _ => rhs,
+                    }
+                    TNumber::Int(v) => match rhs {
+                        TNumber::Float(r) => $ff(v as f64, r).into(),
+                        TNumber::Int(r) => $ii(v, r).into(),
+                        _ => rhs,
+                    }
+                    _ => self,
+                }
+            }
+        )*
+    };
 }
 
 impl TNumber {
@@ -46,7 +76,6 @@ impl TNumber {
 
     pub fn default() -> Self { TNumber::Int(0) }
 
-
     pub fn default_float() -> Self { TNumber::Float(0f64) }
 
     pub fn floor_float(self) -> Self {
@@ -55,98 +84,58 @@ impl TNumber {
             _ => self.to_float(),
         }
     }
-}
 
-macro_rules! operator_overloading {
-    ($($operator_name:ident => $operator_fn:ident; $ff:expr; $ii:expr),*) => {
-        $(
-            impl std::ops::$operator_name for TNumber {
-                type Output = TNumber;
-
-                fn $operator_fn(self, rhs: Self) -> Self::Output {
-                    match self {
-                        TNumber::Float(v) => {
-                            match rhs {
-                                TNumber::Float(r) => TNumber::Float($ff(v, r)),
-                                TNumber::Int(r) => TNumber::Float($ff(v, r as f64)),
-                            }
-                        }
-                        TNumber::Int(v) => {
-                            match rhs {
-                                TNumber::Float(r) => TNumber::Float($ff(v as f64, r)),
-                                TNumber::Int(r) => $ii(v, r).into(),
-                            }
-                        }
-                    }
-                }
-            }
-        )*
-    };
-}
+    operator_overload!(
+        add => |v, r| v + r; i64::wrapping_add,
+        sub => |v, r| v - r; i64::wrapping_sub,
+        mul => |v, r| v * r; i64::wrapping_mul,
+        div => |v, r| v / r; |v, r| v as f64 / r as f64,
+        rem => |v, r| v % r; i64::wrapping_rem,
+        shl => |_, _| NaN::FloatBit; |v: i64, r: i64|  v.wrapping_shl(if r >= 0 { r as u32 } else { -r as u32 } ),
+        shr => |_, _| NaN::FloatBit;  |v: i64, r: i64| v.wrapping_shr(if r >= 0 { r as u32 } else { -r as u32 } ),
+        bitor => |_, _| NaN::FloatBit; i64::bitor,
+        bitand => |_, _| NaN::FloatBit; i64::bitand,
+        bitxor => |_, _| NaN::FloatBit; i64::bitxor
+    );
 
 
-macro_rules! bit_not_float {
-    () => {panic!("位运算不能有浮点数")};
-}
 
-operator_overloading!(
-    Add => add; |v, r| v + r; |v:i64, r:i64| v.wrapping_add(r),
-    Sub => sub; |v, r| v - r; |v:i64, r:i64| v.wrapping_sub(r),
-    Mul => mul; |v, r| v * r; |v:i64, r:i64| v.wrapping_mul(r),
-    Div => div; |v, r| v / r; |v:i64, r:i64| v as f64 / r as f64,
-    Rem => rem; |v, r| v % r; |v:i64, r:i64| v.wrapping_rem(r),
-    Shl => shl; |_, _| bit_not_float!(); |v:i64, r:i64| {
-        if r >= 0 { v.overflowing_shl(r as u32).0 } else { v.overflowing_shr(-r as u32).0 }
-    },
-    Shr => shr; |_, _| bit_not_float!(); |v:i64, r:i64| {
-        if r >= 0 { v.overflowing_shr(r as u32).0 } else { v.overflowing_shl(-r as u32).0 }
-    },
-    BitOr => bitor; |_, _| bit_not_float!(); |v:i64, r:i64| v.bitor(r),
-    BitAnd => bitand; |_, _| bit_not_float!(); |v:i64, r:i64| v.bitand(r),
-    BitXor => bitxor; |_, _| bit_not_float!(); |v:i64, r:i64| v.bitxor(r)
-);
-
-impl std::ops::Neg for TNumber {
-    type Output = TNumber;
-
-    fn neg(self) -> Self::Output {
+    pub fn neg(self) -> Self {
         match self {
             TNumber::Float(v) => { (-v).into() }
             TNumber::Int(v) => { (-v).into() }
+            _ => self
         }
     }
-}
 
-impl std::ops::Not for TNumber {
-    type Output = TNumber;
-
-    fn not(self) -> Self::Output {
+    pub fn not(self) -> Self {
         match self {
-            TNumber::Float(_) => bit_not_float!(),
+            TNumber::Float(_) => NaN::FloatBit.into(),
             TNumber::Int(v) => (!v).into(),
+            _ => self,
         }
     }
 }
+
 
 macro_rules! eq_overwrite {
-    ($($eq:path => $func:ident, $res:ty),*) => {
+    ($($eq:path => $func:ident, $res:ty, $def:ident),*) => {
         impl Eq for TNumber {}
         $(
             impl $eq for TNumber {
                 fn $func(&self, rhs: &Self) -> $res {
                     match *self {
-                        TNumber::Float(v) => {
-                            match *rhs {
-                                TNumber::Float(r) => v.$func(&r),
-                                TNumber::Int(r) => v.$func(&(r as f64)),
-                            }
+                        TNumber::Float(v) => match *rhs {
+                            TNumber::Float(r) => v.$func(&r).into(),
+                            TNumber::Int(r) => v.$func(&(r as f64)),
+                            _ => $def,
                         }
-                        TNumber::Int(v) => {
-                            match *rhs {
-                                TNumber::Float(r) => (v as f64).$func(&r),
-                                TNumber::Int(r) => v.$func(&r),
-                            }
+                        TNumber::Int(v) => match *rhs {
+                            TNumber::Float(r) => (v as f64).$func(&r),
+                            TNumber::Int(r) => v.$func(&r),
+                            _ => $def,
                         }
+                        _ => $def,
                     }
                 }
             }
@@ -155,20 +144,24 @@ macro_rules! eq_overwrite {
 }
 
 eq_overwrite!(
-    PartialEq<Self> => eq, bool,
-    PartialOrd<Self> => partial_cmp, Option<std::cmp::Ordering>
+    PartialEq<Self> => eq, bool, false,
+    PartialOrd<Self> => partial_cmp, Option<std::cmp::Ordering>, None
 );
 
-impl FromStr for TNumber {
-    type Err = VmError;
+impl From<NaN> for TNumber {
+    fn from(value: NaN) -> Self {
+        Self::NaN(value)
+    }
+}
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+impl From<&str> for TNumber {
+    fn from(s: &str) -> Self {
         if let Ok(v) = s.parse() {
-            Ok(TNumber::Int(v))
+            TNumber::Int(v)
         } else if let Ok(v) = s.parse() {
-            Ok(TNumber::Float(v))
+            TNumber::Float(v)
         } else {
-            Err(VmError::StringConvertNumber)
+            TNumber::NaN(NaN::StringConvertNumber)
         }
     }
 }
